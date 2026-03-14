@@ -45,6 +45,7 @@ async function api<T>(
 export default function MiniAppPage() {
     const [view, setView] = useState<View>("home");
     const [initData, setInitData] = useState("");
+    const [connected, setConnected] = useState<boolean | null>(null);
     const [token, setToken] = useState("");
     const [repos, setRepos] = useState<string[]>([]);
     const [selectedRepo, setSelectedRepo] = useState("");
@@ -69,6 +70,13 @@ export default function MiniAppPage() {
         return () => clearTimeout(t);
     }, []);
 
+    useEffect(() => {
+        if (!initData) return;
+        api<{ connected: boolean }>("/api/miniapp/status")
+            .then((data) => setConnected(data.connected))
+            .catch(() => setConnected(false));
+    }, [initData]);
+
     const clearFeedback = useCallback(() => {
         setError("");
         setSuccess("");
@@ -80,6 +88,7 @@ export default function MiniAppPage() {
         try {
             await api("/api/miniapp/connect", { method: "POST", body: { token } });
             setSuccess("GitHub connected.");
+            setConnected(true);
             setToken("");
             setView("home");
         } catch (e) {
@@ -89,12 +98,17 @@ export default function MiniAppPage() {
         }
     };
 
+    const fetchRepos = useCallback(async () => {
+        const data = await api<{ repos: string[] }>("/api/miniapp/repos");
+        setRepos(data.repos);
+        return data.repos;
+    }, []);
+
     const handleLoadRepos = async () => {
         clearFeedback();
         setLoading(true);
         try {
-            const data = await api<{ repos: string[] }>("/api/miniapp/repos");
-            setRepos(data.repos);
+            await fetchRepos();
             setView("repos");
         } catch (e) {
             setError(e instanceof Error ? e.message : "Failed to load repos");
@@ -103,12 +117,19 @@ export default function MiniAppPage() {
         }
     };
 
+    useEffect(() => {
+        if (view === "create" && repos.length === 0) {
+            fetchRepos().catch(() => {});
+        }
+    }, [view, repos.length, fetchRepos]);
+
     const handleDisconnect = async () => {
         clearFeedback();
         setLoading(true);
         try {
             await api("/api/miniapp/disconnect", { method: "POST" });
             setSuccess("Disconnected.");
+            setConnected(false);
             setView("home");
         } catch (e) {
             setError(e instanceof Error ? e.message : "Disconnect failed");
@@ -177,17 +198,19 @@ export default function MiniAppPage() {
                 {view === "home" && (
                     <div className="flex flex-col gap-3">
                         <h1 className="text-lg font-semibold">GitHub Issue Bot</h1>
-                        <button
-                            type="button"
-                            className="rounded-lg px-4 py-3 font-medium"
-                            style={{
-                                backgroundColor: "var(--tg-theme-button-color)",
-                                color: "var(--tg-theme-button-text-color)",
-                            }}
-                            onClick={() => setView("connect")}
-                        >
-                            Connect GitHub
-                        </button>
+                        {connected === false && (
+                            <button
+                                type="button"
+                                className="rounded-lg px-4 py-3 font-medium"
+                                style={{
+                                    backgroundColor: "var(--tg-theme-button-color)",
+                                    color: "var(--tg-theme-button-text-color)",
+                                }}
+                                onClick={() => setView("connect")}
+                            >
+                                Connect GitHub
+                            </button>
+                        )}
                         <button
                             type="button"
                             className="rounded-lg border px-4 py-3 font-medium"
@@ -196,7 +219,7 @@ export default function MiniAppPage() {
                                 color: "var(--tg-theme-button-color)",
                             }}
                             onClick={handleLoadRepos}
-                            disabled={loading}
+                            disabled={loading || connected !== true}
                         >
                             My repositories
                         </button>
@@ -208,18 +231,20 @@ export default function MiniAppPage() {
                                 color: "var(--tg-theme-button-color)",
                             }}
                             onClick={() => setView("create")}
-                            disabled={loading}
+                            disabled={loading || connected !== true}
                         >
                             New issue
                         </button>
-                        <button
-                            type="button"
-                            className="mt-2 text-sm opacity-70"
-                            onClick={handleDisconnect}
-                            disabled={loading}
-                        >
-                            Disconnect GitHub
-                        </button>
+                        {connected === true && (
+                            <button
+                                type="button"
+                                className="mt-2 text-sm opacity-70"
+                                onClick={handleDisconnect}
+                                disabled={loading}
+                            >
+                                Disconnect GitHub
+                            </button>
+                        )}
                     </div>
                 )}
 
@@ -299,11 +324,9 @@ export default function MiniAppPage() {
                             ← Back
                         </button>
                         <h2 className="text-lg font-semibold">New issue</h2>
-                        <label htmlFor="repo" className="text-sm opacity-80">Repo (owner/name)</label>
-                        <input
+                        <label htmlFor="repo" className="text-sm opacity-80">Repo</label>
+                        <select
                             id="repo"
-                            type="text"
-                            placeholder="owner/repo"
                             className="w-full rounded-lg border px-3 py-2"
                             value={selectedRepo}
                             onChange={(e) => setSelectedRepo(e.target.value)}
@@ -312,7 +335,14 @@ export default function MiniAppPage() {
                                 backgroundColor: "var(--tg-theme-bg-color)",
                                 color: "var(--tg-theme-text-color)",
                             }}
-                        />
+                        >
+                            <option value="">Select repository</option>
+                            {repos.map((fullName) => (
+                                <option key={fullName} value={fullName}>
+                                    {fullName}
+                                </option>
+                            ))}
+                        </select>
                         <label htmlFor="title" className="text-sm opacity-80">Title</label>
                         <input
                             id="title"
