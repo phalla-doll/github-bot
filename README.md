@@ -29,11 +29,16 @@ Create GitHub issues from Telegram using a personal access token.
 
 `/disconnect` → Removes your stored token from the bot.
 
+### Telegram Mini App
+
+Use **/app** or the **Open App** menu button (when `MINI_APP_URL` is set) to open the in-app web UI. Same flow: connect GitHub, list repos, create issues. Auth is via Telegram Web App `initData` (verified server-side).
+
 ## Commands
 
 | Command       | Description                          |
 | ------------- | ------------------------------------ |
 | `/start`      | Start the bot                        |
+| `/app`        | Open Mini App (web UI)               |
 | `/connect`    | Connect GitHub with a PAT            |
 | `/repos`      | List your repositories               |
 | `/issue`      | Create an issue (`/issue owner/repo`)|
@@ -44,7 +49,7 @@ Create GitHub issues from Telegram using a personal access token.
 
 - **Bot:** [Telegraf](https://telegraf.js.org/), Node.js, TypeScript
 - **Backend / DB:** [Convex](https://convex.dev/)
-- **GitHub API:** [Octokit](https://github.com/octokit/octokit.js)
+- **GitHub API:** [@octokit/rest](https://github.com/octokit/rest.js)
 
 ```mermaid
 flowchart LR
@@ -55,14 +60,17 @@ flowchart LR
 
 ## Project structure
 
-Planned layout (see [project-overview.md](project-overview.md) for full spec; implementation may be in progress):
-
 ```
 project-root/
   bot/
     index.ts
     telegram.ts
+    state.ts
+    deps.ts
     commands/
+      start.ts
+      help.ts
+      app.ts         # /app → open Mini App
       connect.ts
       repos.ts
       issue.ts
@@ -70,9 +78,15 @@ project-root/
   convex/
     schema.ts
     users.ts
+    _generated/
   services/
     github.ts
     encryption.ts
+    telegram.ts      # Mini App initData verification
+  src/
+    app/
+      app/            # Mini App UI at /app
+      api/miniapp/   # API routes (connect, repos, issues, disconnect)
 ```
 
 ## Environment variables
@@ -82,6 +96,7 @@ project-root/
 | `TELEGRAM_BOT_TOKEN` | Token from [@BotFather](https://t.me/BotFather) |
 | `CONVEX_URL`         | Convex deployment URL            |
 | `ENCRYPTION_SECRET`  | Secret key for encrypting tokens |
+| `MINI_APP_URL`       | Full URL to Mini App (e.g. `https://your-domain.com/app`) — enables menu button and /app |
 
 ## GitHub token permissions
 
@@ -106,13 +121,29 @@ No other scopes needed for the MVP.
 | Repo not found | Repository not accessible                  |
 | API rate limit | Try again later                            |
 
+## Convex commands
+
+| Script | Command | Purpose |
+|--------|---------|---------|
+| `npm run convex:dev` | `convex dev` | Start Convex dev server (watches `convex/`, pushes changes, updates `_generated`). Run this before bot/Mini App. |
+| `npm run convex:deploy` | `convex deploy` | Deploy Convex backend to production. |
+| `npm run convex:codegen` | `convex codegen` | Regenerate `convex/_generated` (e.g. in CI). |
+| `npm run convex:dashboard` | `convex dashboard` | Open Convex dashboard in browser. |
+| `npm run convex:data` | `convex data` | List tables / show table data in terminal. |
+| `npm run convex:logs` | `convex logs` | Tail deployment logs. |
+
+First-time setup: run `npm run convex:dev` once; sign in if prompted. It will create `.env.local` with `CONVEX_DEPLOYMENT`. Copy the deployment URL from the [dashboard](https://dashboard.convex.dev) into `.env` as `CONVEX_URL` (e.g. `https://xxx.convex.cloud`) for the bot and Next.js.
+
 ## Getting started
 
 1. Clone the repo and install dependencies: `npm install`
-2. Set the environment variables above (e.g. in `.env`)
-3. Run the bot (e.g. `npm run dev` or `npm run bot` when available)
-
-See [project-overview.md](project-overview.md) for the full MVP spec. Implementation may be in progress.
+2. Create a Convex project: run `npm run convex:dev` (sign in if needed; this creates `convex/_generated` and `.env.local` with `CONVEX_DEPLOYMENT`).
+3. Create a `.env` file in the project root with:
+   - `TELEGRAM_BOT_TOKEN` — from [@BotFather](https://t.me/BotFather)
+   - `CONVEX_URL` — from the Convex dashboard (e.g. `https://xxx.convex.cloud`)
+   - `ENCRYPTION_SECRET` — a long random string (e.g. 32+ chars) for encrypting GitHub tokens
+4. Run the bot: `npm run bot`
+5. **Mini App (optional):** Deploy the Next.js app (e.g. Vercel) and set `MINI_APP_URL` to the full Mini App URL (e.g. `https://your-domain.com/app`). Run the web app locally with `npm run dev`. In [BotFather](https://t.me/BotFather): Bot Settings → Configure Mini App → set the same URL. The bot will then show an “Open App” menu button and `/app` will open the Mini App.
 
 ## Future / roadmap
 
