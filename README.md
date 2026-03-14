@@ -1,36 +1,124 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Telegram → GitHub Issue Bot
 
-## Getting Started
+Create GitHub issues from Telegram using a personal access token.
 
-First, run the development server:
+## Goal
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Connect your GitHub account with a Personal Access Token
+- Select a repository
+- Create an issue
+- Receive the issue link
+
+**Primary use case:** Telegram → Create GitHub issue quickly.
+
+## Core user flow
+
+### Connect GitHub
+
+`/connect` → Bot asks for your GitHub Personal Access Token → You send the token → Bot stores it → **GitHub connected successfully**
+
+### List repositories
+
+`/repos` → Bot fetches your repositories via GitHub API and returns a numbered list (e.g. `phalla/project-alpha`, `phalla/frontend-ui`).
+
+### Create issue
+
+`/issue owner/repo` (e.g. `/issue phalla/project-alpha`) → Bot asks for **Issue title?** → You reply → Bot asks **Issue description?** → You reply → Bot creates the issue and returns the URL (e.g. `https://github.com/phalla/project-alpha/issues/24`).
+
+### Disconnect
+
+`/disconnect` → Removes your stored token from the bot.
+
+## Commands
+
+| Command       | Description                          |
+| ------------- | ------------------------------------ |
+| `/start`      | Start the bot                        |
+| `/connect`    | Connect GitHub with a PAT            |
+| `/repos`      | List your repositories               |
+| `/issue`      | Create an issue (`/issue owner/repo`)|
+| `/disconnect` | Remove stored GitHub token           |
+| `/help`       | Show help                            |
+
+## Tech stack
+
+- **Bot:** [Telegraf](https://telegraf.js.org/), Node.js, TypeScript
+- **Backend / DB:** [Convex](https://convex.dev/)
+- **GitHub API:** [Octokit](https://github.com/octokit/octokit.js)
+
+```mermaid
+flowchart LR
+  Telegram --> Bot[Telegram Bot]
+  Bot --> Convex[Convex DB + server]
+  Convex --> GitHub[GitHub API]
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Project structure
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Planned layout (see [project-overview.md](project-overview.md) for full spec; implementation may be in progress):
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+project-root/
+  bot/
+    index.ts
+    telegram.ts
+    commands/
+      connect.ts
+      repos.ts
+      issue.ts
+      disconnect.ts
+  convex/
+    schema.ts
+    users.ts
+  services/
+    github.ts
+    encryption.ts
+```
 
-## Learn More
+## Environment variables
 
-To learn more about Next.js, take a look at the following resources:
+| Variable             | Purpose                          |
+| -------------------- | -------------------------------- |
+| `TELEGRAM_BOT_TOKEN` | Token from [@BotFather](https://t.me/BotFather) |
+| `CONVEX_URL`         | Convex deployment URL            |
+| `ENCRYPTION_SECRET`  | Secret key for encrypting tokens |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## GitHub token permissions
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Create a PAT with:
 
-## Deploy on Vercel
+- **Issues:** Read + Write
+- **Repository metadata:** Read
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+No other scopes needed for the MVP.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Security
+
+- GitHub tokens are encrypted (e.g. AES) before storage.
+- Use `/disconnect` to remove your token from the database.
+- Do not hardcode secrets; use environment variables.
+
+## Error handling
+
+| Case           | User message / behavior                    |
+| -------------- | ------------------------------------------ |
+| Invalid token  | Reconnect using `/connect`                  |
+| Repo not found | Repository not accessible                  |
+| API rate limit | Try again later                            |
+
+## Getting started
+
+1. Clone the repo and install dependencies: `npm install`
+2. Set the environment variables above (e.g. in `.env`)
+3. Run the bot (e.g. `npm run dev` or `npm run bot` when available)
+
+See [project-overview.md](project-overview.md) for the full MVP spec. Implementation may be in progress.
+
+## Future / roadmap
+
+- Natural-language issue creation (e.g. one message → auto title + description)
+- Reply-to-message: turn a Telegram message into an issue body
+- Notifications: forward GitHub webhooks (new issue, comment, assigned)
+- Quick issue: `/bug repo title | description`
+- Assign issue: `/assign 24 @username`
+- Long-term: Telegram as a lightweight dev control panel (`/pr`, `/deploy`, `/review`, etc.)
