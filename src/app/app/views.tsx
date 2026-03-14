@@ -1,21 +1,25 @@
 "use client";
 
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-
 export type IssueSummary = {
     number: number;
     title: string;
     state: string;
     html_url: string;
     body?: string | null;
+};
+
+const inputStyle = {
+    borderColor: "var(--tg-theme-hint-color)",
+    backgroundColor: "var(--tg-theme-bg-color)",
+    color: "var(--tg-theme-text-color)",
+};
+const buttonStyle = {
+    backgroundColor: "var(--tg-theme-button-color)",
+    color: "var(--tg-theme-button-text-color)",
+};
+const borderButtonStyle = {
+    borderColor: "var(--tg-theme-button-color)",
+    color: "var(--tg-theme-button-color)",
 };
 
 export function LoadingMessage({ children }: { children: React.ReactNode }) {
@@ -48,42 +52,54 @@ export function HomeView({
             <h1 className="text-lg font-semibold">GitHub Issue Bot</h1>
             {statusLoading && <LoadingMessage>Checking connection…</LoadingMessage>}
             {!statusLoading && connected === false && (
-                <Button onClick={onConnect}>Connect GitHub</Button>
+                <button
+                    type="button"
+                    className="rounded-2xl px-4 py-3 font-medium"
+                    style={buttonStyle}
+                    onClick={onConnect}
+                >
+                    Connect GitHub
+                </button>
             )}
             {!statusLoading && (
                 <>
-                    <Button
-                        variant="outline"
-                        onClick={onLoadRepos}
-                        disabled={loading || connected !== true || reposLoading}
-                    >
-                        {reposLoading ? "Loading…" : "My repositories"}
-                    </Button>
-                    <Button
-                        variant="outline"
-                        onClick={onCreateIssue}
-                        disabled={loading || connected !== true || reposLoading}
-                    >
-                        New issue
-                    </Button>
-                    <Button
-                        variant="outline"
-                        onClick={onViewIssues}
-                        disabled={loading || connected !== true || reposLoading}
-                    >
-                        View issues
-                    </Button>
-                    {connected === true && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="mt-2"
-                            onClick={onDisconnect}
-                            disabled={loading}
-                        >
-                            Disconnect GitHub
-                        </Button>
-                    )}
+            <button
+                type="button"
+                className="rounded-2xl border px-4 py-3 font-medium"
+                style={borderButtonStyle}
+                onClick={onLoadRepos}
+                disabled={loading || connected !== true || reposLoading}
+            >
+                {reposLoading ? "Loading…" : "My repositories"}
+            </button>
+            <button
+                type="button"
+                className="rounded-2xl border px-4 py-3 font-medium"
+                style={borderButtonStyle}
+                onClick={onCreateIssue}
+                disabled={loading || connected !== true || reposLoading}
+            >
+                New issue
+            </button>
+            <button
+                type="button"
+                className="rounded-2xl border px-4 py-3 font-medium"
+                style={borderButtonStyle}
+                onClick={onViewIssues}
+                disabled={loading || connected !== true || reposLoading}
+            >
+                View issues
+            </button>
+            {connected === true && (
+                <button
+                    type="button"
+                    className="mt-2 text-sm opacity-70"
+                    onClick={onDisconnect}
+                    disabled={loading}
+                >
+                    Disconnect GitHub
+                </button>
+            )}
                 </>
             )}
         </div>
@@ -105,22 +121,30 @@ export function ConnectView({
 }) {
     return (
         <div className="flex flex-col gap-3">
-            <Button variant="ghost" size="sm" className="self-start" onClick={onBack}>
+            <button type="button" className="self-start text-sm opacity-70" onClick={onBack}>
                 ← Back
-            </Button>
+            </button>
             <h2 className="text-lg font-semibold">Connect GitHub</h2>
             <p className="text-sm opacity-80">
                 Paste your GitHub Personal Access Token. Required: scope «repo» (classic) or Issues + Metadata (fine-grained).
             </p>
-            <Input
+            <input
                 type="password"
                 placeholder="ghp_..."
+                className="w-full rounded-2xl border px-3 py-2"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
+                style={inputStyle}
             />
-            <Button onClick={onConnect} disabled={loading || !token.trim()}>
+            <button
+                type="button"
+                className="rounded-2xl px-4 py-3 font-medium disabled:opacity-50"
+                style={buttonStyle}
+                onClick={onConnect}
+                disabled={loading || !token.trim()}
+            >
                 {loading ? "Connecting…" : "Connect"}
-            </Button>
+            </button>
         </div>
     );
 }
@@ -136,18 +160,19 @@ export function ReposView({
 }) {
     return (
         <div className="flex flex-col gap-3">
-            <Button variant="ghost" size="sm" className="self-start" onClick={onBack}>
+            <button type="button" className="self-start text-sm opacity-70" onClick={onBack}>
                 ← Back
-            </Button>
+            </button>
             <h2 className="text-lg font-semibold">Repositories</h2>
             {reposLoading ? (
                 <LoadingMessage>Loading…</LoadingMessage>
             ) : (
-                <ul className="max-h-64 list-none overflow-auto rounded-2xl border border-border p-0">
+                <ul className="max-h-64 list-none overflow-auto rounded-2xl border p-0">
                     {repos.map((fullName) => (
                         <li
                             key={fullName}
-                            className="miniapp-list-item border-b border-border p-3 last:border-b-0"
+                            className="miniapp-list-item border-b p-3 last:border-b-0"
+                            style={{ borderColor: "var(--tg-theme-hint-color)" }}
                         >
                             {fullName}
                         </li>
@@ -185,57 +210,56 @@ export function CreateIssueView({
 }) {
     return (
         <div className="flex flex-col gap-3">
-            <Button variant="ghost" size="sm" className="self-start" onClick={onBack}>
+            <button type="button" className="self-start text-sm opacity-70" onClick={onBack}>
                 ← Back
-            </Button>
+            </button>
             <h2 className="text-lg font-semibold">New issue</h2>
-            <label htmlFor="repo" className="text-sm opacity-80">
-                Repo
-            </label>
+            <label htmlFor="repo" className="text-sm opacity-80">Repo</label>
             {reposLoading && <LoadingMessage>Loading repositories…</LoadingMessage>}
-            <Select
-                value={selectedRepo || null}
-                onValueChange={(v) => setSelectedRepo(v ?? "")}
+            <select
+                id="repo"
+                className="w-full rounded-2xl border px-3 py-2 disabled:opacity-60"
+                value={selectedRepo}
+                onChange={(e) => setSelectedRepo(e.target.value)}
+                style={inputStyle}
                 disabled={reposLoading}
             >
-                <SelectTrigger id="repo" className="w-full">
-                    <SelectValue placeholder="Select repository" />
-                </SelectTrigger>
-                <SelectContent>
-                    {repos.map((fullName) => (
-                        <SelectItem key={fullName} value={fullName}>
-                            {fullName}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-            <label htmlFor="title" className="text-sm opacity-80">
-                Title
-            </label>
-            <Input
+                <option value="">Select repository</option>
+                {repos.map((fullName) => (
+                    <option key={fullName} value={fullName}>
+                        {fullName}
+                    </option>
+                ))}
+            </select>
+            <label htmlFor="title" className="text-sm opacity-80">Title</label>
+            <input
                 id="title"
                 type="text"
                 placeholder="Issue title"
+                className="w-full rounded-2xl border px-3 py-2"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
+                style={inputStyle}
             />
-            <label htmlFor="body" className="text-sm opacity-80">
-                Description (optional)
-            </label>
+            <label htmlFor="body" className="text-sm opacity-80">Description (optional)</label>
             <textarea
                 id="body"
                 placeholder="Description"
                 rows={4}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground outline-none transition-shadow placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                className="w-full rounded-2xl border px-3 py-2"
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
+                style={inputStyle}
             />
-            <Button
+            <button
+                type="button"
+                className="rounded-2xl px-4 py-3 font-medium disabled:opacity-50"
+                style={buttonStyle}
                 onClick={onCreate}
                 disabled={loading || !selectedRepo.trim() || !title.trim()}
             >
                 {loading ? "Creating…" : "Create issue"}
-            </Button>
+            </button>
         </div>
     );
 }
@@ -263,53 +287,50 @@ export function IssuesListView({
 }) {
     return (
         <div className="flex flex-col gap-3">
-            <Button variant="ghost" size="sm" className="self-start" onClick={onBack}>
+            <button type="button" className="self-start text-sm opacity-70" onClick={onBack}>
                 ← Back
-            </Button>
+            </button>
             <h2 className="text-lg font-semibold">View issues</h2>
-            <label htmlFor="issues-repo" className="text-sm opacity-80">
-                Repository
-            </label>
+            <label htmlFor="issues-repo" className="text-sm opacity-80">Repository</label>
             {reposLoading && <LoadingMessage>Loading repositories…</LoadingMessage>}
-            <Select
-                value={selectedRepoForIssues || null}
-                onValueChange={(v) => setSelectedRepoForIssues(v ?? "")}
+            <select
+                id="issues-repo"
+                className="w-full rounded-2xl border px-3 py-2 disabled:opacity-60"
+                value={selectedRepoForIssues}
+                onChange={(e) => setSelectedRepoForIssues(e.target.value)}
+                style={inputStyle}
                 disabled={reposLoading}
             >
-                <SelectTrigger id="issues-repo" className="w-full">
-                    <SelectValue placeholder="Select repository" />
-                </SelectTrigger>
-                <SelectContent>
-                    {repos.map((fullName) => (
-                        <SelectItem key={fullName} value={fullName}>
-                            {fullName}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-            <Button
+                <option value="">Select repository</option>
+                {repos.map((fullName) => (
+                    <option key={fullName} value={fullName}>
+                        {fullName}
+                    </option>
+                ))}
+            </select>
+            <button
+                type="button"
+                className="rounded-2xl px-4 py-3 font-medium disabled:opacity-50"
+                style={buttonStyle}
                 onClick={onLoadIssues}
                 disabled={issuesLoading || !selectedRepoForIssues}
             >
                 {issuesLoading ? "Loading…" : "Load issues"}
-            </Button>
+            </button>
             {issuesLoading && selectedRepoForIssues && (
                 <LoadingMessage>Loading issues…</LoadingMessage>
             )}
             {!issuesLoading && issuesList.length > 0 && (
-                <ul className="max-h-64 list-none overflow-auto rounded-2xl border border-border p-0">
+                <ul className="max-h-64 list-none overflow-auto rounded-2xl border p-0" style={{ borderColor: "var(--tg-theme-hint-color)" }}>
                     {issuesList.map((issue) => (
-                        <li
-                            key={issue.number}
-                            className="miniapp-list-item border-b border-border last:border-b-0"
-                        >
-                            <Button
-                                variant="ghost"
-                                className="w-full justify-start p-3 font-normal"
+                        <li key={issue.number} className="miniapp-list-item border-b last:border-b-0" style={{ borderColor: "var(--tg-theme-hint-color)" }}>
+                            <button
+                                type="button"
+                                className="w-full p-3 text-left"
                                 onClick={() => onOpenIssueDetail(issue.number)}
                             >
                                 <span className="font-medium">#{issue.number}</span> {issue.title}
-                            </Button>
+                            </button>
                         </li>
                     ))}
                 </ul>

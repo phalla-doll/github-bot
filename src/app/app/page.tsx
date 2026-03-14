@@ -2,8 +2,6 @@
 
 import { useCallback, useEffect, useState, startTransition } from "react";
 import useSWR from "swr";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import { ConnectView, CreateIssueView, HomeView, IssuesListView, LoadingMessage, ReposView, type IssueSummary } from "./views";
 
 type View = "home" | "connect" | "repos" | "create" | "issues" | "issueDetail";
@@ -235,16 +233,24 @@ export default function MiniAppPage() {
 
     return (
         <div
-            className="miniapp-wrapper min-h-screen p-4"
+            className="min-h-screen p-4"
             style={{
                 backgroundColor: "var(--tg-theme-bg-color, #fff)",
                 color: "var(--tg-theme-text-color, #000)",
             }}
         >
             {(error || success) && (
-                <Alert variant={success ? "success" : "error"} className="mb-4">
-                    <AlertDescription>{success || error}</AlertDescription>
-                </Alert>
+                <div
+                    className="mb-4 rounded-2xl p-3 text-sm"
+                    style={{
+                        backgroundColor: success
+                            ? "var(--tg-theme-button-color, #2481cc)"
+                            : "var(--tg-theme-hint-color, #999)",
+                        color: "var(--tg-theme-button-text-color, #fff)",
+                    }}
+                >
+                    {success || error}
+                </div>
             )}
 
             {view === "home" && (
@@ -353,19 +359,19 @@ function IssueDetailView({
     const isOpen = issueDetail?.state === "open";
     return (
         <div className="flex flex-col gap-3">
-            <Button variant="ghost" size="sm" className="self-start" onClick={onBack}>
+            <button type="button" className="self-start text-sm opacity-70" onClick={onBack}>
                 ← Back
-            </Button>
+            </button>
             <h2 className="text-lg font-semibold">Issue #{issueNumber}</h2>
             {error && (
-                <Alert variant="error">
-                    <AlertDescription>{error}</AlertDescription>
-                </Alert>
+                <div className="rounded-2xl p-3 text-sm" style={{ backgroundColor: "var(--tg-theme-hint-color)", color: "var(--tg-theme-button-text-color)" }}>
+                    {error}
+                </div>
             )}
             {success && (
-                <Alert variant="success">
-                    <AlertDescription>{success}</AlertDescription>
-                </Alert>
+                <div className="rounded-2xl p-3 text-sm" style={{ backgroundColor: "var(--tg-theme-button-color)", color: "var(--tg-theme-button-text-color)" }}>
+                    {success}
+                </div>
             )}
             {issueDetailLoading && (
                 <LoadingMessage>Loading…</LoadingMessage>
@@ -375,13 +381,22 @@ function IssueDetailView({
                     <p className="font-medium">{issueDetail.title}</p>
                     <p className="text-sm opacity-80">State: {issueDetail.state}</p>
                     <p className="text-sm whitespace-pre-wrap">{issueDetail.body ?? "(no description)"}</p>
-                    <a href={issueDetail.html_url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary">
+                    <a href={issueDetail.html_url} target="_blank" rel="noopener noreferrer" className="text-sm" style={{ color: "var(--tg-theme-button-color)" }}>
                         Open on GitHub
                     </a>
                     {isOpen && (
-                        <Button onClick={onCloseIssue} disabled={loading}>
+                        <button
+                            type="button"
+                            className="rounded-2xl px-4 py-3 font-medium disabled:opacity-50"
+                            style={{
+                                backgroundColor: "var(--tg-theme-button-color)",
+                                color: "var(--tg-theme-button-text-color)",
+                            }}
+                            onClick={onCloseIssue}
+                            disabled={loading}
+                        >
                             {loading ? "Closing…" : "Close issue"}
-                        </Button>
+                        </button>
                     )}
                 </>
             )}
