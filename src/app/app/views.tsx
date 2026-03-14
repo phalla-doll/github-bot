@@ -22,8 +22,13 @@ const borderButtonStyle = {
     color: "var(--tg-theme-button-color)",
 };
 
+export function LoadingMessage({ children }: { children: React.ReactNode }) {
+    return <p className="text-sm opacity-80">{children}</p>;
+}
+
 export function HomeView({
     connected,
+    statusLoading,
     loading,
     reposLoading,
     onConnect,
@@ -33,6 +38,7 @@ export function HomeView({
     onDisconnect,
 }: {
     connected: boolean | null;
+    statusLoading: boolean;
     loading: boolean;
     reposLoading: boolean;
     onConnect: () => void;
@@ -44,7 +50,8 @@ export function HomeView({
     return (
         <div className="flex flex-col gap-3">
             <h1 className="text-lg font-semibold">GitHub Issue Bot</h1>
-            {connected === false && (
+            {statusLoading && <LoadingMessage>Checking connection…</LoadingMessage>}
+            {!statusLoading && connected === false && (
                 <button
                     type="button"
                     className="rounded-2xl px-4 py-3 font-medium"
@@ -54,6 +61,8 @@ export function HomeView({
                     Connect GitHub
                 </button>
             )}
+            {!statusLoading && (
+                <>
             <button
                 type="button"
                 className="rounded-2xl border px-4 py-3 font-medium"
@@ -90,6 +99,8 @@ export function HomeView({
                 >
                     Disconnect GitHub
                 </button>
+            )}
+                </>
             )}
         </div>
     );
@@ -154,7 +165,7 @@ export function ReposView({
             </button>
             <h2 className="text-lg font-semibold">Repositories</h2>
             {reposLoading ? (
-                <p className="text-sm opacity-80">Loading…</p>
+                <LoadingMessage>Loading…</LoadingMessage>
             ) : (
                 <ul className="max-h-64 list-none overflow-auto rounded-2xl border p-0">
                     {repos.map((fullName) => (
@@ -174,6 +185,7 @@ export function ReposView({
 
 export function CreateIssueView({
     repos,
+    reposLoading,
     selectedRepo,
     setSelectedRepo,
     title,
@@ -185,6 +197,7 @@ export function CreateIssueView({
     onCreate,
 }: {
     repos: string[];
+    reposLoading: boolean;
     selectedRepo: string;
     setSelectedRepo: (v: string) => void;
     title: string;
@@ -202,12 +215,14 @@ export function CreateIssueView({
             </button>
             <h2 className="text-lg font-semibold">New issue</h2>
             <label htmlFor="repo" className="text-sm opacity-80">Repo</label>
+            {reposLoading && <LoadingMessage>Loading repositories…</LoadingMessage>}
             <select
                 id="repo"
-                className="w-full rounded-2xl border px-3 py-2"
+                className="w-full rounded-2xl border px-3 py-2 disabled:opacity-60"
                 value={selectedRepo}
                 onChange={(e) => setSelectedRepo(e.target.value)}
                 style={inputStyle}
+                disabled={reposLoading}
             >
                 <option value="">Select repository</option>
                 {repos.map((fullName) => (
@@ -251,6 +266,7 @@ export function CreateIssueView({
 
 export function IssuesListView({
     repos,
+    reposLoading,
     selectedRepoForIssues,
     setSelectedRepoForIssues,
     issuesList,
@@ -260,6 +276,7 @@ export function IssuesListView({
     onBack,
 }: {
     repos: string[];
+    reposLoading: boolean;
     selectedRepoForIssues: string;
     setSelectedRepoForIssues: (v: string) => void;
     issuesList: IssueSummary[];
@@ -275,12 +292,14 @@ export function IssuesListView({
             </button>
             <h2 className="text-lg font-semibold">View issues</h2>
             <label htmlFor="issues-repo" className="text-sm opacity-80">Repository</label>
+            {reposLoading && <LoadingMessage>Loading repositories…</LoadingMessage>}
             <select
                 id="issues-repo"
-                className="w-full rounded-2xl border px-3 py-2"
+                className="w-full rounded-2xl border px-3 py-2 disabled:opacity-60"
                 value={selectedRepoForIssues}
                 onChange={(e) => setSelectedRepoForIssues(e.target.value)}
                 style={inputStyle}
+                disabled={reposLoading}
             >
                 <option value="">Select repository</option>
                 {repos.map((fullName) => (
@@ -298,7 +317,10 @@ export function IssuesListView({
             >
                 {issuesLoading ? "Loading…" : "Load issues"}
             </button>
-            {issuesList.length > 0 && (
+            {issuesLoading && selectedRepoForIssues && (
+                <LoadingMessage>Loading issues…</LoadingMessage>
+            )}
+            {!issuesLoading && issuesList.length > 0 && (
                 <ul className="max-h-64 list-none overflow-auto rounded-2xl border p-0" style={{ borderColor: "var(--tg-theme-hint-color)" }}>
                     {issuesList.map((issue) => (
                         <li key={issue.number} className="miniapp-list-item border-b last:border-b-0" style={{ borderColor: "var(--tg-theme-hint-color)" }}>
@@ -313,8 +335,8 @@ export function IssuesListView({
                     ))}
                 </ul>
             )}
-            {issuesList.length === 0 && selectedRepoForIssues && !issuesLoading && (
-                <p className="text-sm opacity-80">No open issues. Load issues or select another repo.</p>
+            {!issuesLoading && issuesList.length === 0 && selectedRepoForIssues && (
+                <LoadingMessage>No open issues. Load issues or select another repo.</LoadingMessage>
             )}
         </div>
     );

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, startTransition } from "react";
 import useSWR from "swr";
-import { ConnectView, CreateIssueView, HomeView, IssuesListView, ReposView, type IssueSummary } from "./views";
+import { ConnectView, CreateIssueView, HomeView, IssuesListView, LoadingMessage, ReposView, type IssueSummary } from "./views";
 
 type View = "home" | "connect" | "repos" | "create" | "issues" | "issueDetail";
 
@@ -53,7 +53,7 @@ export default function MiniAppPage() {
     }, []);
 
     const [initData, setInitData] = useState("");
-    const { data: statusData, mutate: mutateStatus } = useSWR(
+    const { data: statusData, isLoading: statusLoading, mutate: mutateStatus } = useSWR(
         initData ? "/api/miniapp/status" : null,
         fetcher<{ connected: boolean }>,
     );
@@ -256,6 +256,7 @@ export default function MiniAppPage() {
             {view === "home" && (
                 <HomeView
                     connected={connected}
+                    statusLoading={statusLoading}
                     loading={loading}
                     reposLoading={reposLoading}
                     onConnect={() => setView("connect")}
@@ -287,6 +288,7 @@ export default function MiniAppPage() {
             {view === "create" && (
                 <CreateIssueView
                     repos={repos}
+                    reposLoading={reposLoading}
                     selectedRepo={selectedRepo}
                     setSelectedRepo={setSelectedRepo}
                     title={title}
@@ -302,6 +304,7 @@ export default function MiniAppPage() {
             {view === "issues" && (
                 <IssuesListView
                     repos={repos}
+                    reposLoading={reposLoading}
                     selectedRepoForIssues={selectedRepoForIssues}
                     setSelectedRepoForIssues={(v) => {
                         setSelectedRepoForIssues(v);
@@ -371,7 +374,7 @@ function IssueDetailView({
                 </div>
             )}
             {issueDetailLoading && (
-                <p className="text-sm opacity-80">Loading…</p>
+                <LoadingMessage>Loading…</LoadingMessage>
             )}
             {issueDetail && (
                 <>
