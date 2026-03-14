@@ -17,6 +17,12 @@ Create GitHub issues from Telegram using a personal access token.
 
 `/connect` → Bot asks for your GitHub Personal Access Token → You send the token → Bot stores it → **GitHub connected successfully**
 
+**Token permissions (required):**
+
+- **Classic PAT:** [Create token](https://github.com/settings/tokens/new) → enable scope **`repo`** (full control of private repositories; includes listing repos and creating issues).
+- **Fine-grained PAT:** [Create token](https://github.com/settings/tokens?type=beta) → Repository access (e.g. “All repositories” or select repos) → Permissions: **Issues: Read and write**, **Metadata: Read** (required for API).
+- If you get “Invalid token”, check: no extra spaces, token not expired/revoked, and the above scopes are enabled.
+
 ### List repositories
 
 `/repos` → Bot fetches your repositories via GitHub API and returns a numbered list (e.g. `phalla/project-alpha`, `phalla/frontend-ui`).

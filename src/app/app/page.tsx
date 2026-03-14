@@ -234,7 +234,7 @@ export default function MiniAppPage() {
                         </button>
                         <h2 className="text-lg font-semibold">Connect GitHub</h2>
                         <p className="text-sm opacity-80">
-                            Paste your GitHub Personal Access Token.
+                            Paste your GitHub Personal Access Token. Required: scope «repo» (classic) or Issues + Metadata (fine-grained).
                         </p>
                         <input
                             type="password"

@@ -9,7 +9,10 @@ export function connect(_deps: BotDeps) {
         const telegramId = ctx.from?.id;
         if (!telegramId) return;
         connectAwaitingToken.add(telegramId);
-        await ctx.reply("Paste your GitHub Personal Access Token.");
+        await ctx.reply(
+            "Paste your GitHub Personal Access Token.\n\n" +
+                "Required: Classic PAT with scope «repo», or Fine-grained PAT with Issues (read/write) + Metadata (read).",
+        );
     };
 }
 
