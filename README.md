@@ -15,7 +15,7 @@ Create GitHub issues from Telegram using a personal access token.
 
 ### Connect GitHub
 
-`/connect` → Bot asks for your GitHub Personal Access Token → You send the token → Bot stores it → **GitHub connected successfully**
+`/connect` → Bot asks for your GitHub Personal Access Token → You send the token → Bot stores it (encrypted) → **GitHub connected successfully**
 
 **Token permissions (required):**
 
@@ -56,6 +56,7 @@ Use **/app** or the **Open App** menu button (when `MINI_APP_URL` is set) to ope
 - **Bot:** [Telegraf](https://telegraf.js.org/), Node.js, TypeScript
 - **Backend / DB:** [Convex](https://convex.dev/)
 - **GitHub API:** [@octokit/rest](https://github.com/octokit/rest.js)
+- **Mini App:** Next.js 16, React 19, Tailwind CSS
 
 ```mermaid
 flowchart LR
@@ -67,42 +68,49 @@ flowchart LR
 ## Project structure
 
 ```
-project-root/
+github-bot/
   bot/
-    index.ts
-    telegram.ts
-    state.ts
-    deps.ts
+    index.ts           # Entry, Convex client, menu button
+    telegram.ts        # Telegraf bot setup
+    state.ts           # Conversation state
+    deps.ts            # Bot dependencies
     commands/
       start.ts
       help.ts
-      app.ts         # /app → open Mini App
+      app.ts           # /app → open Mini App
       connect.ts
       repos.ts
       issue.ts
       disconnect.ts
   convex/
-    schema.ts
-    users.ts
+    schema.ts          # users (telegramId, githubToken, createdAt, updatedAt)
+    users.ts           # Mutations/queries for tokens
     _generated/
   services/
-    github.ts
-    encryption.ts
-    telegram.ts      # Mini App initData verification
+    github.ts          # GitHub API (Octokit)
+    encryption.ts      # AES token encryption
+    telegram.ts        # Mini App initData verification
   src/
     app/
-      app/            # Mini App UI at /app
-      api/miniapp/   # API routes (connect, repos, issues, disconnect)
+      app/             # Mini App UI at /app
+        layout.tsx
+        page.tsx
+      api/miniapp/     # API routes for Mini App
+        connect/
+        repos/
+        issues/
+        disconnect/
+        status/
 ```
 
 ## Environment variables
 
-| Variable             | Purpose                          |
-| -------------------- | -------------------------------- |
-| `TELEGRAM_BOT_TOKEN` | Token from [@BotFather](https://t.me/BotFather) |
-| `CONVEX_URL`         | Convex deployment URL            |
-| `ENCRYPTION_SECRET`  | Secret key for encrypting tokens |
-| `MINI_APP_URL`       | Full URL to Mini App (e.g. `https://your-domain.com/app`) — enables menu button and /app |
+| Variable             | Purpose                                                          |
+| -------------------- | ---------------------------------------------------------------- |
+| `TELEGRAM_BOT_TOKEN` | Token from [@BotFather](https://t.me/BotFather)                  |
+| `CONVEX_URL`         | Convex deployment URL (from dashboard after `npm run convex:dev`)|
+| `ENCRYPTION_SECRET`  | 32+ char secret for encrypting GitHub tokens                     |
+| `MINI_APP_URL`       | (Optional) Full URL to Mini App — enables menu button and /app   |
 
 ## GitHub token permissions
 
@@ -115,7 +123,7 @@ No other scopes needed for the MVP.
 
 ## Security
 
-- GitHub tokens are encrypted (e.g. AES) before storage.
+- GitHub tokens are encrypted (AES) before storage in Convex.
 - Use `/disconnect` to remove your token from the database.
 - Do not hardcode secrets; use environment variables.
 
@@ -131,25 +139,35 @@ No other scopes needed for the MVP.
 
 | Script | Command | Purpose |
 |--------|---------|---------|
-| `npm run convex:dev` | `convex dev` | Start Convex dev server (watches `convex/`, pushes changes, updates `_generated`). Run this before bot/Mini App. |
+| `npm run convex:dev` | `convex dev` | Start Convex dev server (watches `convex/`, pushes changes). Run this before bot/Mini App. |
 | `npm run convex:deploy` | `convex deploy` | Deploy Convex backend to production. |
-| `npm run convex:codegen` | `convex codegen` | Regenerate `convex/_generated` (e.g. in CI). |
+| `npm run convex:codegen` | `convex codegen` | Regenerate `convex/_generated`. |
 | `npm run convex:dashboard` | `convex dashboard` | Open Convex dashboard in browser. |
 | `npm run convex:data` | `convex data` | List tables / show table data in terminal. |
 | `npm run convex:logs` | `convex logs` | Tail deployment logs. |
 
-First-time setup: run `npm run convex:dev` once; sign in if prompted. It will create `.env.local` with `CONVEX_DEPLOYMENT`. Copy the deployment URL from the [dashboard](https://dashboard.convex.dev) into `.env` as `CONVEX_URL` (e.g. `https://xxx.convex.cloud`) for the bot and Next.js.
+First-time setup: run `npm run convex:dev` once; sign in if prompted. Copy the deployment URL from the [dashboard](https://dashboard.convex.dev) into `.env` as `CONVEX_URL` (e.g. `https://xxx.convex.cloud`) for the bot and Next.js.
 
 ## Getting started
 
 1. Clone the repo and install dependencies: `npm install`
-2. Create a Convex project: run `npm run convex:dev` (sign in if needed; this creates `convex/_generated` and `.env.local` with `CONVEX_DEPLOYMENT`).
+2. Create a Convex project: run `npm run convex:dev` (sign in if needed; this creates `convex/_generated`).
 3. Create a `.env` file in the project root with:
    - `TELEGRAM_BOT_TOKEN` — from [@BotFather](https://t.me/BotFather)
    - `CONVEX_URL` — from the Convex dashboard (e.g. `https://xxx.convex.cloud`)
-   - `ENCRYPTION_SECRET` — a long random string (e.g. 32+ chars) for encrypting GitHub tokens
+   - `ENCRYPTION_SECRET` — a long random string (e.g. `openssl rand -base64 32`)
 4. Run the bot: `npm run bot`
 5. **Mini App (optional):** Deploy the Next.js app (e.g. Vercel) and set `MINI_APP_URL` to the full Mini App URL (e.g. `https://your-domain.com/app`). Run the web app locally with `npm run dev`. In [BotFather](https://t.me/BotFather): Bot Settings → Configure Mini App → set the same URL. The bot will then show an “Open App” menu button and `/app` will open the Mini App.
+
+## Scripts
+
+| Script       | Purpose                |
+| ------------ | ---------------------- |
+| `npm run bot`| Run Telegram bot (tsx) |
+| `npm run dev`| Run Next.js dev server |
+| `npm run build` | Build Next.js        |
+| `npm run lint`  | Biome check           |
+| `npm run format`| Biome format --write  |
 
 ## Future / roadmap
 
