@@ -1,6 +1,5 @@
 "use client";
 
-import Script from "next/script";
 import { useCallback, useEffect, useState } from "react";
 
 type View = "home" | "connect" | "repos" | "create";
@@ -56,11 +55,18 @@ export default function MiniAppPage() {
     const [success, setSuccess] = useState("");
 
     useEffect(() => {
-        if (typeof window !== "undefined") {
-            window.Telegram?.WebApp?.ready();
-            window.Telegram?.WebApp?.expand();
-            setInitData(getInitData());
-        }
+        if (typeof window === "undefined") return;
+        const apply = () => {
+            const data = getInitData();
+            if (data) {
+                window.Telegram?.WebApp?.ready();
+                window.Telegram?.WebApp?.expand();
+            }
+            setInitData(data);
+        };
+        apply();
+        const t = setTimeout(apply, 500);
+        return () => clearTimeout(t);
     }, []);
 
     const clearFeedback = useCallback(() => {
@@ -147,12 +153,7 @@ export default function MiniAppPage() {
     }
 
     return (
-        <>
-            <Script
-                src="https://telegram.org/js/telegram-web-app.js"
-                strategy="beforeInteractive"
-            />
-            <div
+        <div
                 className="min-h-screen p-4"
                 style={{
                     backgroundColor: "var(--tg-theme-bg-color, #fff)",
@@ -355,6 +356,5 @@ export default function MiniAppPage() {
                     </div>
                 )}
             </div>
-        </>
     );
 }
