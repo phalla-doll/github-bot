@@ -183,7 +183,7 @@ export default function MiniAppPage() {
             >
                 {(error || success) && (
                     <div
-                        className="mb-4 rounded-lg p-3 text-sm"
+                        className="mb-4 rounded-2xl p-3 text-sm"
                         style={{
                             backgroundColor: success
                                 ? "var(--tg-theme-button-color, #2481cc)"
@@ -201,7 +201,7 @@ export default function MiniAppPage() {
                         {connected === false && (
                             <button
                                 type="button"
-                                className="rounded-lg px-4 py-3 font-medium"
+                                className="rounded-2xl px-4 py-3 font-medium"
                                 style={{
                                     backgroundColor: "var(--tg-theme-button-color)",
                                     color: "var(--tg-theme-button-text-color)",
@@ -213,7 +213,7 @@ export default function MiniAppPage() {
                         )}
                         <button
                             type="button"
-                            className="rounded-lg border px-4 py-3 font-medium"
+                            className="rounded-2xl border px-4 py-3 font-medium"
                             style={{
                                 borderColor: "var(--tg-theme-button-color)",
                                 color: "var(--tg-theme-button-color)",
@@ -225,7 +225,7 @@ export default function MiniAppPage() {
                         </button>
                         <button
                             type="button"
-                            className="rounded-lg border px-4 py-3 font-medium"
+                            className="rounded-2xl border px-4 py-3 font-medium"
                             style={{
                                 borderColor: "var(--tg-theme-button-color)",
                                 color: "var(--tg-theme-button-color)",
@@ -264,7 +264,7 @@ export default function MiniAppPage() {
                         <input
                             type="password"
                             placeholder="ghp_..."
-                            className="w-full rounded-lg border px-3 py-2"
+                            className="w-full rounded-2xl border px-3 py-2"
                             value={token}
                             onChange={(e) => setToken(e.target.value)}
                             style={{
@@ -275,7 +275,7 @@ export default function MiniAppPage() {
                         />
                         <button
                             type="button"
-                            className="rounded-lg px-4 py-3 font-medium disabled:opacity-50"
+                            className="rounded-2xl px-4 py-3 font-medium disabled:opacity-50"
                             style={{
                                 backgroundColor: "var(--tg-theme-button-color)",
                                 color: "var(--tg-theme-button-text-color)",
@@ -298,7 +298,7 @@ export default function MiniAppPage() {
                             ← Back
                         </button>
                         <h2 className="text-lg font-semibold">Repositories</h2>
-                        <ul className="max-h-64 list-none overflow-auto rounded-lg border p-0">
+                        <ul className="max-h-64 list-none overflow-auto rounded-2xl border p-0">
                             {repos.map((fullName) => (
                                 <li
                                     key={fullName}
@@ -327,7 +327,7 @@ export default function MiniAppPage() {
                         <label htmlFor="repo" className="text-sm opacity-80">Repo</label>
                         <select
                             id="repo"
-                            className="w-full rounded-lg border px-3 py-2"
+                            className="w-full rounded-2xl border px-3 py-2"
                             value={selectedRepo}
                             onChange={(e) => setSelectedRepo(e.target.value)}
                             style={{
@@ -348,7 +348,7 @@ export default function MiniAppPage() {
                             id="title"
                             type="text"
                             placeholder="Issue title"
-                            className="w-full rounded-lg border px-3 py-2"
+                            className="w-full rounded-2xl border px-3 py-2"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             style={{
@@ -362,7 +362,7 @@ export default function MiniAppPage() {
                             id="body"
                             placeholder="Description"
                             rows={4}
-                            className="w-full rounded-lg border px-3 py-2"
+                            className="w-full rounded-2xl border px-3 py-2"
                             value={body}
                             onChange={(e) => setBody(e.target.value)}
                             style={{
@@ -373,7 +373,7 @@ export default function MiniAppPage() {
                         />
                         <button
                             type="button"
-                            className="rounded-lg px-4 py-3 font-medium disabled:opacity-50"
+                            className="rounded-2xl px-4 py-3 font-medium disabled:opacity-50"
                             style={{
                                 backgroundColor: "var(--tg-theme-button-color)",
                                 color: "var(--tg-theme-button-text-color)",
