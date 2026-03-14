@@ -3,9 +3,11 @@ import { app } from "./commands/app";
 import { connect, handleTokenMessage } from "./commands/connect";
 import { disconnect } from "./commands/disconnect";
 import { help } from "./commands/help";
+import { close } from "./commands/close";
 import { handleIssueFlow, issue } from "./commands/issue";
 import { repos } from "./commands/repos";
 import { start } from "./commands/start";
+import { view } from "./commands/view";
 import type { BotDeps } from "./deps";
 
 export function createBot(token: string, deps: BotDeps) {
@@ -17,6 +19,8 @@ export function createBot(token: string, deps: BotDeps) {
     bot.command("connect", connect(deps));
     bot.command("repos", repos(deps));
     bot.command("issue", issue(deps));
+    bot.command("view", view(deps));
+    bot.command("close", close(deps));
     bot.command("disconnect", disconnect(deps));
 
     bot.on("text", async (ctx) => {

@@ -2,7 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-type View = "home" | "connect" | "repos" | "create";
+type View = "home" | "connect" | "repos" | "create" | "issues" | "issueDetail";
+
+type IssueSummary = {
+    number: number;
+    title: string;
+    state: string;
+    html_url: string;
+    body?: string | null;
+};
 
 declare global {
     interface Window {
@@ -54,6 +62,10 @@ export default function MiniAppPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
+    const [selectedRepoForIssues, setSelectedRepoForIssues] = useState("");
+    const [issuesList, setIssuesList] = useState<IssueSummary[]>([]);
+    const [selectedIssueNumber, setSelectedIssueNumber] = useState<number | null>(null);
+    const [issueDetail, setIssueDetail] = useState<IssueSummary | null>(null);
 
     useEffect(() => {
         if (typeof window === "undefined") return;
@@ -118,10 +130,56 @@ export default function MiniAppPage() {
     };
 
     useEffect(() => {
-        if (view === "create" && repos.length === 0) {
+        if ((view === "create" || view === "issues") && repos.length === 0) {
             fetchRepos().catch(() => {});
         }
     }, [view, repos.length, fetchRepos]);
+
+    const handleLoadIssues = async () => {
+        clearFeedback();
+        const [owner, repo] = selectedRepoForIssues.split("/");
+        if (!owner || !repo) {
+            setError("Select a repository.");
+            return;
+        }
+        setLoading(true);
+        try {
+            const data = await api<{ issues: IssueSummary[] }>(
+                `/api/miniapp/issues?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`,
+            );
+            setIssuesList(data.issues);
+        } catch (e) {
+            setError(e instanceof Error ? e.message : "Failed to load issues");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleOpenIssueDetail = (issueNumber: number) => {
+        setSelectedIssueNumber(issueNumber);
+        setIssueDetail(null);
+        setView("issueDetail");
+    };
+
+    const handleCloseIssue = async () => {
+        if (!selectedRepoForIssues || selectedIssueNumber == null) return;
+        clearFeedback();
+        const [owner, repo] = selectedRepoForIssues.split("/");
+        if (!owner || !repo) return;
+        setLoading(true);
+        try {
+            await api<{ url: string }>("/api/miniapp/issues/close", {
+                method: "POST",
+                body: { owner, repo, number: selectedIssueNumber },
+            });
+            setSuccess("Issue closed.");
+            setIssueDetail((prev) => (prev ? { ...prev, state: "closed" } : null));
+        } catch (e) {
+            setError(e instanceof Error ? e.message : "Failed to close issue");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleDisconnect = async () => {
         clearFeedback();
@@ -234,6 +292,18 @@ export default function MiniAppPage() {
                             disabled={loading || connected !== true}
                         >
                             New issue
+                        </button>
+                        <button
+                            type="button"
+                            className="rounded-2xl border px-4 py-3 font-medium"
+                            style={{
+                                borderColor: "var(--tg-theme-button-color)",
+                                color: "var(--tg-theme-button-color)",
+                            }}
+                            onClick={() => setView("issues")}
+                            disabled={loading || connected !== true}
+                        >
+                            View issues
                         </button>
                         {connected === true && (
                             <button
@@ -385,6 +455,176 @@ export default function MiniAppPage() {
                         </button>
                     </div>
                 )}
+
+                {view === "issues" && (
+                    <div className="flex flex-col gap-3">
+                        <button
+                            type="button"
+                            className="self-start text-sm opacity-70"
+                            onClick={() => setView("home")}
+                        >
+                            ← Back
+                        </button>
+                        <h2 className="text-lg font-semibold">View issues</h2>
+                        <label htmlFor="issues-repo" className="text-sm opacity-80">Repository</label>
+                        <select
+                            id="issues-repo"
+                            className="w-full rounded-2xl border px-3 py-2"
+                            value={selectedRepoForIssues}
+                            onChange={(e) => {
+                                setSelectedRepoForIssues(e.target.value);
+                                setIssuesList([]);
+                            }}
+                            style={{
+                                borderColor: "var(--tg-theme-hint-color)",
+                                backgroundColor: "var(--tg-theme-bg-color)",
+                                color: "var(--tg-theme-text-color)",
+                            }}
+                        >
+                            <option value="">Select repository</option>
+                            {repos.map((fullName) => (
+                                <option key={fullName} value={fullName}>
+                                    {fullName}
+                                </option>
+                            ))}
+                        </select>
+                        <button
+                            type="button"
+                            className="rounded-2xl px-4 py-3 font-medium disabled:opacity-50"
+                            style={{
+                                backgroundColor: "var(--tg-theme-button-color)",
+                                color: "var(--tg-theme-button-text-color)",
+                            }}
+                            onClick={handleLoadIssues}
+                            disabled={loading || !selectedRepoForIssues}
+                        >
+                            {loading ? "Loading…" : "Load issues"}
+                        </button>
+                        {issuesList.length > 0 && (
+                            <ul className="max-h-64 list-none overflow-auto rounded-2xl border p-0" style={{ borderColor: "var(--tg-theme-hint-color)" }}>
+                                {issuesList.map((issue) => (
+                                    <li key={issue.number} className="border-b last:border-b-0" style={{ borderColor: "var(--tg-theme-hint-color)" }}>
+                                        <button
+                                            type="button"
+                                            className="w-full p-3 text-left"
+                                            onClick={() => handleOpenIssueDetail(issue.number)}
+                                        >
+                                            <span className="font-medium">#{issue.number}</span> {issue.title}
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                        {issuesList.length === 0 && selectedRepoForIssues && !loading && (
+                            <p className="text-sm opacity-80">No open issues. Load issues or select another repo.</p>
+                        )}
+                    </div>
+                )}
+
+                {view === "issueDetail" && selectedIssueNumber != null && selectedRepoForIssues && (
+                    <IssueDetailView
+                        ownerRepo={selectedRepoForIssues}
+                        issueNumber={selectedIssueNumber}
+                        issueDetail={issueDetail}
+                        setIssueDetail={setIssueDetail}
+                        onBack={() => {
+                            setView("issues");
+                            setSelectedIssueNumber(null);
+                            setIssueDetail(null);
+                        }}
+                        onCloseIssue={handleCloseIssue}
+                        loading={loading}
+                        error={error}
+                        success={success}
+                    />
+                )}
             </div>
+    );
+}
+
+function IssueDetailView({
+    ownerRepo,
+    issueNumber,
+    issueDetail,
+    setIssueDetail,
+    onBack,
+    onCloseIssue,
+    loading,
+    error,
+    success,
+}: {
+    ownerRepo: string;
+    issueNumber: number;
+    issueDetail: IssueSummary | null;
+    setIssueDetail: (v: IssueSummary | null) => void;
+    onBack: () => void;
+    onCloseIssue: () => Promise<void>;
+    loading: boolean;
+    error: string;
+    success: string;
+}) {
+    const [fetchError, setFetchError] = useState("");
+    useEffect(() => {
+        const [owner, repo] = ownerRepo.split("/");
+        if (!owner || !repo) return;
+        let cancelled = false;
+        setFetchError("");
+        fetch(`/api/miniapp/issues?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&number=${issueNumber}`, {
+            headers: { "x-telegram-init-data": getInitData() },
+        })
+            .then((r) => r.json())
+            .then((data) => {
+                if (!cancelled && data.number !== undefined) setIssueDetail(data as IssueSummary);
+                else if (!cancelled && (data as { error?: string }).error) setFetchError((data as { error: string }).error);
+            })
+            .catch(() => { if (!cancelled) setFetchError("Failed to load issue"); });
+        return () => { cancelled = true; };
+    }, [ownerRepo, issueNumber, setIssueDetail]);
+
+    const isOpen = issueDetail?.state === "open";
+    return (
+        <div className="flex flex-col gap-3">
+            <button type="button" className="self-start text-sm opacity-70" onClick={onBack}>
+                ← Back
+            </button>
+            <h2 className="text-lg font-semibold">Issue #{issueNumber}</h2>
+            {(fetchError || error) && (
+                <div className="rounded-2xl p-3 text-sm" style={{ backgroundColor: "var(--tg-theme-hint-color)", color: "var(--tg-theme-button-text-color)" }}>
+                    {fetchError || error}
+                </div>
+            )}
+            {success && (
+                <div className="rounded-2xl p-3 text-sm" style={{ backgroundColor: "var(--tg-theme-button-color)", color: "var(--tg-theme-button-text-color)" }}>
+                    {success}
+                </div>
+            )}
+            {!issueDetail && !fetchError && (
+                <p className="text-sm opacity-80">Loading…</p>
+            )}
+            {issueDetail && (
+                <>
+                    <p className="font-medium">{issueDetail.title}</p>
+                    <p className="text-sm opacity-80">State: {issueDetail.state}</p>
+                    <p className="text-sm whitespace-pre-wrap">{issueDetail.body ?? "(no description)"}</p>
+                    <a href={issueDetail.html_url} target="_blank" rel="noopener noreferrer" className="text-sm" style={{ color: "var(--tg-theme-button-color)" }}>
+                        Open on GitHub
+                    </a>
+                    {isOpen && (
+                        <button
+                            type="button"
+                            className="rounded-2xl px-4 py-3 font-medium disabled:opacity-50"
+                            style={{
+                                backgroundColor: "var(--tg-theme-button-color)",
+                                color: "var(--tg-theme-button-text-color)",
+                            }}
+                            onClick={onCloseIssue}
+                            disabled={loading}
+                        >
+                            {loading ? "Closing…" : "Close issue"}
+                        </button>
+                    )}
+                </>
+            )}
+        </div>
     );
 }

@@ -80,6 +80,8 @@ export async function handleIssueFlow(
                 await reply(
                     "❌ GitHub token invalid. Reconnect using /connect",
                 );
+            else if (e.code === "not_owner")
+                await reply("❌ You can only create issues on repos you own.");
             else if (e.code === "repo_not_found")
                 await reply("❌ Repository not accessible.");
             else if (e.code === "rate_limit")
