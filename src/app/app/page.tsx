@@ -25,7 +25,7 @@ function getInitData(): string {
 
 async function api<T>(
     path: string,
-    init?: RequestInit & { body?: object },
+    init?: Omit<RequestInit, "body"> & { body?: object },
 ): Promise<T> {
     const initData = getInitData();
     const { body, ...rest } = init ?? {};
